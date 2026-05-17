@@ -111,5 +111,5 @@ that compose the stages downstream of the orchestrator.
 
 The schema version on every record matches the eventual
 `helios-provenance-spec` v0.1 contract — see
-[`types.py`](https://github.com/577-Industries/helios-fusion-engine/blob/main/src/helios_fusion/types.py)
+[`types.py`](https://github.com/577Industries/helios-fusion-engine/blob/main/src/helios_fusion/types.py)
 for the verbatim field shapes.

@@ -1,6 +1,6 @@
 # helios-fusion-engine
 
-[![CI](https://github.com/577-Industries/helios-fusion-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/577-Industries/helios-fusion-engine/actions/workflows/ci.yml) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI](https://github.com/577Industries/helios-fusion-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/577Industries/helios-fusion-engine/actions/workflows/ci.yml) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI](https://img.shields.io/pypi/v/helios-fusion-engine.svg)](https://pypi.org/project/helios-fusion-engine/)
 
 > Model-agnostic probabilistic fusion of heterogeneous space-weather model
@@ -96,7 +96,7 @@ for an end-to-end runnable pipeline.
 
 ## Documentation
 
-- **Master plan**: see [`helios-program`](https://github.com/577-Industries/helios-program) (private; internal team)
+- **Master plan**: see [`helios-program`](https://github.com/577Industries/helios-program) (private; internal team)
 - **Architecture**: [`docs/architecture.md`](docs/architecture.md) explains
   why BMA + isotonic + conformal compose as they do.
 - **Baselines**: [`docs/baselines.md`](docs/baselines.md) defines the
@@ -105,7 +105,7 @@ for an end-to-end runnable pipeline.
   mkdocstrings from Google-style docstrings).
 - **Provenance**: every output traces to its upstream model and
   transformation chain via the schema fields on `ModelOutput` and
-  `FusedOutput`. Once [`helios-provenance-spec`](https://github.com/577-Industries/helios-provenance-spec)
+  `FusedOutput`. Once [`helios-provenance-spec`](https://github.com/577Industries/helios-provenance-spec)
   v0.1 ships, the `schema_version` constant on every record will re-anchor
   to that contract.
 
@@ -139,6 +139,6 @@ discussed in an issue first.
   title        = { helios-fusion-engine: Model-agnostic probabilistic fusion of heterogeneous space-weather model outputs: Bayesian Model Averaging orchestrator, isotonic-regression reliability calibrator, split + Mondrian conformal prediction wrappers, and severity-stratified validation harness with CCMC-compatible metrics (HSS, TSS, POD, FAR, Brier, CRPS) },
   year         = {2026},
   publisher    = {577 Industries Inc.},
-  url          = {https://github.com/577-Industries/helios-fusion-engine},
+  url          = {https://github.com/577Industries/helios-fusion-engine},
 }
 ```
