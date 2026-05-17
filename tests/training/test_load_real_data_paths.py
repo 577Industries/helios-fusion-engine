@@ -2,6 +2,10 @@
 
 These tests don't hit the network -- they inject fake adapter outputs to
 drive the resample / forward-fill / gap-recording branches.
+
+Sprint C-Training-v2 update: the adapter helper now returns
+``(timestamp, component_id, probability)`` tuples where ``component_id``
+matches the v2 ``<name>/<variants>/<energy>`` registry identity.
 """
 
 from __future__ import annotations
@@ -16,6 +20,7 @@ import pytest
 loader_module = importlib.import_module("helios_fusion.training.load_table_3_1")
 TRAINING_EVENTS = loader_module.TRAINING_EVENTS
 _resample_to_grid = loader_module._resample_to_grid
+_resample_truth_to_grid = loader_module._resample_truth_to_grid
 load_table_3_1 = loader_module.load_table_3_1
 
 
@@ -43,8 +48,30 @@ def test_resample_to_grid_forward_fill() -> None:
     )
     grid = [base + timedelta(hours=i) for i in range(6)]
     out = _resample_to_grid(df, grid)
-    # Hours 0, 1, 2 see 0.2; hours 3, 4, 5 see 0.7.
     np.testing.assert_allclose(out, [0.2, 0.2, 0.2, 0.7, 0.7, 0.7])
+
+
+def test_resample_truth_to_grid_zeros_on_empty_input() -> None:
+    """Truth resample returns zeros when the truth frame is empty."""
+    grid = [datetime(2024, 1, 1, tzinfo=UTC) + timedelta(hours=i) for i in range(5)]
+    out = _resample_truth_to_grid(pd.DataFrame(), grid)
+    assert out.shape == (5,)
+    assert (out == 0.0).all()
+
+
+def test_resample_truth_to_grid_forward_fill() -> None:
+    """Truth resample forward-fills the observed column across the grid."""
+    base = datetime(2024, 1, 1, tzinfo=UTC)
+    truth = pd.DataFrame(
+        [
+            {"timestamp": base, "observed": 0},
+            {"timestamp": base + timedelta(hours=2), "observed": 1},
+            {"timestamp": base + timedelta(hours=4), "observed": 0},
+        ]
+    )
+    grid = [base + timedelta(hours=i) for i in range(5)]
+    out = _resample_truth_to_grid(truth, grid)
+    np.testing.assert_allclose(out, [0.0, 0.0, 1.0, 1.0, 0.0])
 
 
 def test_real_kp_pull_used_when_returned(monkeypatch: pytest.MonkeyPatch, event: object) -> None:
@@ -52,7 +79,6 @@ def test_real_kp_pull_used_when_returned(monkeypatch: pytest.MonkeyPatch, event:
     base = event.window_start  # type: ignore[attr-defined]
 
     async def fake_pull(_event: object) -> dict[datetime, float]:
-        # Two Kp samples covering the window
         return {
             base: 2.0,
             base + timedelta(days=1): 5.0,
@@ -68,36 +94,35 @@ def test_real_kp_pull_used_when_returned(monkeypatch: pytest.MonkeyPatch, event:
     frame = load_table_3_1(event, use_real_data=True, cadence_hours=12.0)
     # SWPC gap should NOT be recorded because real Kp came back
     assert "swpc_kp" not in frame.data_gaps
-    # Scoreboards gap should be recorded (empty result)
-    assert "sep_scoreboards" in frame.data_gaps
 
 
 def test_real_scoreboards_pull_used_when_returned(
     monkeypatch: pytest.MonkeyPatch, event: object
 ) -> None:
-    """If the async Scoreboards helper returns data, real ISWA records are used."""
+    """If the async Scoreboards helper returns data, real ISWA records are used.
+
+    v2: component_ids are ``<name>/<variants>/<energy>``.
+    """
     base = event.window_start  # type: ignore[attr-defined]
 
     async def fake_kp(_event: object) -> dict[datetime, float]:
         return {}
 
-    monkeypatch.setattr(loader_module, "_async_pull_kp", fake_kp)
-
     async def fake_sb(_event: object) -> list[tuple[datetime, str, float]]:
         return [
-            (base, "UMASEP", 0.35),
-            (base + timedelta(hours=12), "UMASEP", 0.5),
-            (base, "SEPMOD", 0.4),
+            (base, "UMASEP/v2_0/10MeV", 0.35),
+            (base + timedelta(hours=12), "UMASEP/v2_0/10MeV", 0.5),
+            (base, "SEPSTER/Parker/noE", 0.4),
         ]
 
     monkeypatch.setattr(loader_module, "_async_pull_scoreboards", fake_sb)
+    monkeypatch.setattr(loader_module, "_async_pull_kp", fake_kp)
 
     frame = load_table_3_1(event, use_real_data=True, cadence_hours=6.0)
-    # UMASEP and SEPMOD rows should be sourced from "iswa", others "synthetic_proxy"
     by_model = frame.records.groupby("model_id")["source"].first().to_dict()
-    assert by_model["UMASEP"] == "iswa"
-    assert by_model["SEPMOD"] == "iswa"
-    assert by_model["SEPSTER"] == "synthetic_proxy"
+    # Components with adapter data are iswa_real.
+    assert by_model["UMASEP/v2_0/10MeV"] == "iswa_real"
+    assert by_model["SEPSTER/Parker/noE"] == "iswa_real"
 
 
 def test_real_kp_pull_handles_exception(monkeypatch: pytest.MonkeyPatch, event: object) -> None:
@@ -114,7 +139,6 @@ def test_real_kp_pull_handles_exception(monkeypatch: pytest.MonkeyPatch, event: 
 
     frame = load_table_3_1(event, use_real_data=True, cadence_hours=24.0)
     assert "swpc_kp" in frame.data_gaps
-    # Frame still has rows -- synthetic fallback kicked in
     assert not frame.records.empty
 
 

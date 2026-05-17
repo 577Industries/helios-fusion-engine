@@ -36,6 +36,9 @@ from helios_fusion.training.fit_bma import fit_bma_priors
 from helios_fusion.training.fit_conformal import fit_mondrian_conformal, fit_split_conformal
 from helios_fusion.training.fit_isotonic import fit_stratified_calibrators
 from helios_fusion.training.load_table_3_1 import (
+    DEFAULT_COMPONENT_MODELS,
+    DEFAULT_COMPONENT_MODELS_LEGACY,
+    EMPIRICAL_ISWA_COVERAGE,
     TRAINING_EVENTS,
     TrainingEvent,
     TrainingEventFrame,
@@ -43,12 +46,18 @@ from helios_fusion.training.load_table_3_1 import (
     load_table_3_1,
 )
 from helios_fusion.training.pipeline import TrainingArtifacts, run_full_training
+from helios_fusion.training.swpc_sep_archive import event_truth_labels, fetch_sep_event_list
 
 __all__ = [
+    "DEFAULT_COMPONENT_MODELS",
+    "DEFAULT_COMPONENT_MODELS_LEGACY",
+    "EMPIRICAL_ISWA_COVERAGE",
     "TRAINING_EVENTS",
     "TrainingArtifacts",
     "TrainingEvent",
     "TrainingEventFrame",
+    "event_truth_labels",
+    "fetch_sep_event_list",
     "fit_bma_priors",
     "fit_mondrian_conformal",
     "fit_split_conformal",

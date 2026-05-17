@@ -15,9 +15,9 @@ The training run produces four trained artifacts that the kill-gate hold-out eva
 - Python 3.11 or 3.12.
 - An isolated virtual environment in the worktree (`uv venv .venv` is the canonical pattern).
 - `helios-fusion-engine` installed editable (`uv pip install -e '.[dev]'`).
-- `helios-spaceweather-connectors` v0.2.0 from GitHub:
+- `helios-spaceweather-connectors` v0.2.1 from GitHub (registry expansion for Sprint C-Training-v2):
   ```
-  uv pip install 'helios-spaceweather-connectors @ git+https://github.com/577Industries/helios-spaceweather-connectors.git@v0.2.0'
+  uv pip install 'helios-spaceweather-connectors @ git+https://github.com/577Industries/helios-spaceweather-connectors.git@v0.2.1'
   ```
 - `helios-provenance-spec` v0.1.0 from GitHub:
   ```

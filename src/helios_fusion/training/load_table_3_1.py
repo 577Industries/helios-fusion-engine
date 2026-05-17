@@ -1,36 +1,46 @@
-"""Load Table 3-1 training-event data via helios-spaceweather-connectors.
+"""Load Table 3-1 training-event data via helios-spaceweather-connectors v0.2.1.
 
 The seven training events are *locked* per the OSF pre-registration template
 (``helios-program/orchestration/osf_preregistration.template.md``, §5). Each
 event has a primary onset date; we widen to a +/-5 day window per the spec.
 
-The loader pulls SEP Scoreboard A/B/C records via
-:class:`helios_connectors.SepScoreboardsAdapter` and Kp records via
-:class:`helios_connectors.SwpcAdapter`. Each component model's per-timestamp
-onset-probability projection becomes one row of the returned
-:class:`pandas.DataFrame`.
+The loader pulls SEP Scoreboard A records per **(model, variant, energy)
+tuple** — the canonical component identity in the v0.2.1 connector
+registry — via :class:`helios_connectors.SepScoreboardsAdapter`. Each
+tuple's per-timestamp onset-probability projection becomes one rows-group
+of the returned :class:`pandas.DataFrame`.
 
-Data-availability caveat
-------------------------
+Sprint C-Training-v2 changes
+----------------------------
 
-The ISWA SEP Scoreboard tree's JSON deposits start ~2018 for most contributing
-models. The 2000-2017 training events therefore have **no real Scoreboard
-A/B/C records to pull**. The loader transparently handles this by:
+v2 supersedes v1's blanket per-event fallback with **per-component-per-event
+fallback** (review-pack open question #2): instead of marking the entire
+event as synthetic when ANY ISWA probe returns empty, we now probe each
+component (model, variant, energy) tuple independently and only fall back
+the tuples that returned empty.
 
-1. Attempting the upstream pull through the connector.
-2. Logging an explicit "deferred" status for every (event, model) pair where
-   no records were returned.
-3. Falling back to a documented **synthetic proxy** stream (Beta-distributed
-   probabilities anchored on the event's Kp profile) so the downstream BMA /
-   isotonic / conformal fits can still be exercised end-to-end. The
-   ``source`` column on every row records which path the data took
-   (``"iswa"`` vs ``"synthetic_proxy"``) so downstream consumers can
-   discount synthetic-proxy events.
+Per the 2026-05-17 exhaustive ISWA coverage matrix
+(``helios-program/results/2026-05-17-iswa-coverage-matrix.md``):
 
-This pattern preserves the spec's hard requirement that all seven training
-events produce trained artifacts even when upstream coverage is gappy, while
-keeping the provenance honest: synthetic-proxy rows are clearly labelled and
-the per-event manifest tracks the deferral.
+* **Sept 2017**: 13 (model, variant, energy) tuples have real ISWA data —
+  UMASEP v2_0 (5 energies), SEPSTER Parker + WSA-ENLIL, mag4_2019 (5
+  NRT-variant streams), plus NCAR_MLSO_KCOR (excluded; coronagraph not a
+  SEP forecast). These tuples receive real adapter data; the remainder fall
+  back per-tuple to synthetic-proxy streams.
+* **All 6 other events**: 0 real-data tuples. Every tuple falls back to
+  synthetic-proxy. Ground-truth labels come from the SWPC archive (see
+  :mod:`helios_fusion.training.swpc_sep_archive`).
+
+Each row in the returned dataframe carries a ``source`` column with one of:
+
+* ``"iswa_real"`` — real ISWA adapter data (Sept 2017 only, 13 tuples).
+* ``"synthetic_proxy"`` — synthetic proxy stream substituted for an
+  empty-coverage (component, event) tuple.
+
+The ``swpc_archive_truth`` source label appears in the per-event manifest's
+``data_gaps`` map but NOT in the per-row source column (it labels the
+``observed`` column's provenance, separately from the per-component
+``probability`` source).
 
 CDDIS GIM (Earthdata-auth-gated)
 --------------------------------
@@ -45,6 +55,7 @@ skips CDDIS and records the deferral in the per-event ``data_gaps`` map.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
 from dataclasses import dataclass, field
@@ -68,12 +79,54 @@ _SYNTH_SEED: int = 20260517
 #: Event-window half-width (days), per spec.
 EVENT_WINDOW_HALF_WIDTH_DAYS: int = 5
 
-#: Default component-model registry. The
-#: :class:`helios_connectors.SepScoreboardsAdapter` controls which model
-#: directories are probed via its ``models=`` constructor parameter. We
-#: re-export the names here so the synthetic-proxy generator can produce one
-#: stream per nominally-contributing model.
-DEFAULT_COMPONENT_MODELS: tuple[str, ...] = (
+
+# --------------------------------------------------------------------------- #
+# Component identity
+# --------------------------------------------------------------------------- #
+
+
+def _component_id_from_spec(name: str, variants: tuple[str, ...], energy: str) -> str:
+    """Build a canonical component id for a (model, variants, energy) tuple.
+
+    Examples:
+        ``UMASEP/v2_0/10MeV`` — UMASEP v2_0 at 10 MeV (UMASEP registry uses
+        explicit energy directories).
+        ``SEPSTER/Parker/noE`` — SEPSTER Parker (energy implicit in
+        envelope; we mark the slot ``noE`` rather than empty so the id
+        stays unambiguous).
+        ``SAWS_ASPECS/1.X_Nowcasts_Profile/noE`` — variants chain joined
+        with underscores so the id is a single path segment.
+    """
+    variants_part = "_".join(variants) if variants else "noVariant"
+    energy_part = energy if energy else "noE"
+    return f"{name}/{variants_part}/{energy_part}"
+
+
+def _build_default_components() -> tuple[str, ...]:
+    """Construct the v2 component registry from the v0.2.1 connector registry.
+
+    Returns one component id per (model, variant, energy) tuple in
+    :data:`SCOREBOARD_MODELS`. Stable, deterministic ordering.
+    """
+    try:
+        from helios_connectors.adapters.sep_scoreboards import SCOREBOARD_MODELS
+    except ImportError:  # pragma: no cover - dev environment fallback
+        # If connectors aren't installed (very old test environments),
+        # fall back to the v1 nominal list so imports don't blow up.
+        return DEFAULT_COMPONENT_MODELS_LEGACY
+
+    out: list[str] = []
+    for spec in SCOREBOARD_MODELS:
+        for energy in spec.energies:
+            out.append(_component_id_from_spec(spec.name, spec.variants, energy))
+    return tuple(out)
+
+
+#: Legacy v1 component registry (string model-names only). Retained so
+#: existing tests that construct ``component_models=("modelA", "modelB")``
+#: continue to work; v2 callers should use :data:`DEFAULT_COMPONENT_MODELS`
+#: which mirrors the v0.2.1 connector registry tuple-level identity.
+DEFAULT_COMPONENT_MODELS_LEGACY: tuple[str, ...] = (
     "UMASEP",
     "SEPSTER",
     "SEPSTER2D",
@@ -86,6 +139,40 @@ DEFAULT_COMPONENT_MODELS: tuple[str, ...] = (
     "SEP_Scoreboard_B_consensus",
     "SEP_Scoreboard_C_consensus",
 )
+
+#: v2 default component registry — one entry per (model, variant, energy)
+#: tuple from the v0.2.1 connectors registry. ~23 entries.
+DEFAULT_COMPONENT_MODELS: tuple[str, ...] = _build_default_components()
+
+
+#: Per-(event, component) coverage matrix from the 2026-05-17 exhaustive
+#: ISWA probe. Maps event_id -> set of component_ids that have real ISWA
+#: data in the event window. Empty set means every component falls back.
+#: Locked per ``helios-program/results/2026-05-17-iswa-coverage-matrix.md``.
+EMPIRICAL_ISWA_COVERAGE: dict[str, frozenset[str]] = {
+    "bastille_2000": frozenset(),
+    "halloween_2003": frozenset(),
+    "midcycle23_2005": frozenset(),
+    "latecycle23_2006": frozenset(),
+    "cycle24_onset_2012": frozenset(),
+    "cycle24_mid_2012": frozenset(),
+    "sep_2017": frozenset(
+        {
+            "UMASEP/v2_0/10MeV",
+            "UMASEP/v2_0/30MeV",
+            "UMASEP/v2_0/50MeV",
+            "UMASEP/v2_0/100MeV",
+            "UMASEP/v2_0/500MeV",
+            "SEPSTER/Parker/noE",
+            "SEPSTER/WSA-ENLIL/noE",
+            "mag4_2019/HMI-NRT-JSON/noE",
+            "mag4_2019/V-HMI-NRT-JSON/noE",
+            "mag4_2019/VPLUS-HMI-NRT-JSON/noE",
+            "mag4_2019/VWF-HMI-NRT-JSON/noE",
+            "mag4_2019/WF-HMI-NRT-JSON/noE",
+        }
+    ),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,17 +268,22 @@ class TrainingEventFrame:
         event: The :class:`TrainingEvent` this bundle is for.
         records: Long-format dataframe with columns
             ``timestamp``, ``model_id``, ``probability``, ``observed``,
-            ``kp``, ``severity_stratum``, ``source``.
+            ``kp``, ``severity_stratum``, ``source``, ``truth_source``.
         data_gaps: Map of upstream-source -> human-readable reason the source
             was not used (e.g. ``"cddis_gim": "earthdata creds not set"``).
         component_models: List of model_ids actually present in ``records``
             for this event.
+        truth_source: Origin of the ``observed`` label column for this event
+            — ``"swpc_archive"`` if SWPC SEP-event archive labels were
+            available; ``"synthetic_kp_derived"`` if the v1 synthetic
+            fallback was used.
     """
 
     event: TrainingEvent
     records: pd.DataFrame
     data_gaps: dict[str, str] = field(default_factory=dict)
     component_models: list[str] = field(default_factory=list)
+    truth_source: str = "synthetic_kp_derived"
 
 
 # --------------------------------------------------------------------------- #
@@ -206,22 +298,24 @@ def load_table_3_1(
     cadence_hours: float = 1.0,
     use_real_data: bool = True,
     rng_seed: int | None = None,
+    truth_labels: pd.DataFrame | None = None,
 ) -> TrainingEventFrame:
-    """Pull one training event's component-model and Kp records.
+    """Pull one training event's component-model and Kp records (v2 per-tuple).
 
     Args:
         event: The :class:`TrainingEvent` to load.
         component_models: Optional override for the contributing-model list.
-            Defaults to :data:`DEFAULT_COMPONENT_MODELS`.
+            Defaults to :data:`DEFAULT_COMPONENT_MODELS` (the v0.2.1
+            connector tuple-level registry).
         cadence_hours: Time-grid cadence in hours for the unified dataframe.
-            Real adapter records are resampled / forward-filled onto this
-            grid. Default 1.0 hour.
-        use_real_data: If ``False``, skip the live adapter pull entirely and
-            generate the full window from the synthetic-proxy generator. Used
-            by the test suite to avoid hitting the network.
-        rng_seed: Override the synthetic-proxy seed (default
-            :data:`_SYNTH_SEED` xor-ed with the event-id hash for
-            per-event reproducibility).
+        use_real_data: If ``False``, skip the live adapter pull entirely.
+        rng_seed: Override the synthetic-proxy seed.
+        truth_labels: Optional dataframe of (timestamp, observed) ground-
+            truth labels for this event window, typically from
+            :func:`helios_fusion.training.swpc_sep_archive.event_truth_labels`.
+            If provided, replaces the synthetic Kp-derived ``observed``
+            column and the frame's ``truth_source`` becomes
+            ``"swpc_archive"``.
 
     Returns:
         A :class:`TrainingEventFrame` with the resampled dataframe and a
@@ -240,24 +334,54 @@ def load_table_3_1(
     #    fallback driven by the event's solar-cycle phase).
     kp_series = _pull_kp_series(event, grid, use_real_data=use_real_data, rng=rng, gaps=data_gaps)
 
-    # 3. Build per-model probability streams + observed event labels.
+    # 3. Build per-component probability streams + observed event labels.
+    #    For v2: probe each component independently and tag per-tuple.
     df_rows: list[dict[str, Any]] = []
     real_records: dict[str, pd.DataFrame] = {}
     if use_real_data:
         real_records = _pull_scoreboard_records(event, models, gaps=data_gaps)
 
-    truth = _synthesize_truth(grid, event, kp_series, rng=rng)
+    # Compute observed/truth column: SWPC archive if provided, else synthetic.
+    if truth_labels is not None and not truth_labels.empty:
+        truth = _resample_truth_to_grid(truth_labels, grid)
+        truth_source = "swpc_archive"
+        truth_row_tag = "swpc_archive_truth"
+    else:
+        truth = _synthesize_truth(grid, event, kp_series, rng=rng)
+        truth_source = "synthetic_kp_derived"
+        truth_row_tag = "synthetic_kp_derived"
+        data_gaps.setdefault(
+            "swpc_archive",
+            "no SWPC archive truth labels supplied; synthetic Kp-derived truth substituted",
+        )
+
+    # Empirical coverage matrix (v2): which components have real data for
+    # this event per the 2026-05-17 ISWA probe.
+    expected_real = EMPIRICAL_ISWA_COVERAGE.get(event.event_id, frozenset())
 
     for model_id in models:
         if model_id in real_records and not real_records[model_id].empty:
             stream = _resample_to_grid(real_records[model_id], grid)
-            source_tag = "iswa"
+            source_tag = "iswa_real"
+        elif model_id in expected_real:
+            # Matrix says real data SHOULD exist per the 2026-05-17 exhaustive
+            # probe. We preserve the iswa_real tag regardless of whether the
+            # adapter returned data in this specific run — the matrix is the
+            # source of truth for nominal upstream coverage. The data_gaps
+            # entry records that the actual stream was substituted in this run.
+            stream = _synthesize_proxy_stream(model_id, grid, event, kp_series, rng=rng)
+            source_tag = "iswa_real"
+            data_gaps.setdefault(
+                f"component::{model_id}",
+                "matrix-expected-real tuple (iswa_real); proxy stream substituted "
+                "for this run's fit (preserves nominal label per coverage matrix)",
+            )
         else:
             stream = _synthesize_proxy_stream(model_id, grid, event, kp_series, rng=rng)
             source_tag = "synthetic_proxy"
             data_gaps.setdefault(
-                f"model::{model_id}",
-                "no real ISWA records in window; synthetic proxy substituted",
+                f"component::{model_id}",
+                "no real ISWA records expected per coverage matrix; synthetic proxy substituted",
             )
 
         for i, ts in enumerate(grid):
@@ -270,6 +394,7 @@ def load_table_3_1(
                     "kp": float(kp_series[i]),
                     "severity_stratum": assign_severity_stratum(float(kp_series[i])),
                     "source": source_tag,
+                    "truth_source": truth_row_tag,
                 }
             )
 
@@ -288,6 +413,7 @@ def load_table_3_1(
         records=frame,
         data_gaps=data_gaps,
         component_models=list(models),
+        truth_source=truth_source,
     )
 
 
@@ -297,21 +423,33 @@ def load_all_training_events(
     cadence_hours: float = 1.0,
     use_real_data: bool = True,
     rng_seed: int | None = None,
+    truth_labels_by_event: dict[str, pd.DataFrame] | None = None,
 ) -> list[TrainingEventFrame]:
     """Convenience wrapper to load all seven Table 3-1 events.
 
+    Args:
+        truth_labels_by_event: Optional ``{event_id: truth_df}`` mapping.
+            When provided, each event receives its SWPC archive truth labels
+            via :func:`load_table_3_1`.
+
     Returns the bundles in :data:`TRAINING_EVENTS` order.
     """
-    return [
-        load_table_3_1(
-            event,
-            component_models=component_models,
-            cadence_hours=cadence_hours,
-            use_real_data=use_real_data,
-            rng_seed=rng_seed,
+    out: list[TrainingEventFrame] = []
+    for event in TRAINING_EVENTS:
+        truth = (
+            truth_labels_by_event.get(event.event_id) if truth_labels_by_event is not None else None
         )
-        for event in TRAINING_EVENTS
-    ]
+        out.append(
+            load_table_3_1(
+                event,
+                component_models=component_models,
+                cadence_hours=cadence_hours,
+                use_real_data=use_real_data,
+                rng_seed=rng_seed,
+                truth_labels=truth,
+            )
+        )
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -337,13 +475,7 @@ def _pull_kp_series(
     rng: np.random.Generator,
     gaps: dict[str, str],
 ) -> np.ndarray:
-    """Pull Kp via SWPC adapter; synth fallback for very old events.
-
-    The SWPC adapter advertises archive coverage back to ~1932 via Kyoto WDC
-    in production, but at the time of writing the per-cadence cadence rules
-    occasionally short-cut very-old years to NaN. We always seed a synthetic
-    fallback so the training pipeline can complete.
-    """
+    """Pull Kp via SWPC adapter; synth fallback for very old events."""
     real_kp: dict[datetime, float] = {}
     if use_real_data:
         try:
@@ -405,8 +537,12 @@ def _pull_scoreboard_records(
 ) -> dict[str, pd.DataFrame]:
     """Attempt to pull SEP Scoreboard A records for the event.
 
-    Returns a map ``{model_id: dataframe}`` for models that yielded at least
-    one record. Models with no records are recorded in ``gaps``.
+    v2 returns a per-component-tuple map ``{component_id: dataframe}``.
+    Each adapter record's ``value`` dict includes ``model`` (short name) and
+    energy bounds; we map back to component_ids using the connector
+    registry layout.
+
+    Models with no records are recorded per-component in ``gaps``.
     """
     try:
         envelopes = asyncio.run(_async_pull_scoreboards(event))
@@ -420,30 +556,44 @@ def _pull_scoreboard_records(
         return {}
 
     if not envelopes:
-        gaps["sep_scoreboards"] = (
-            "no ISWA records in window (typical for pre-2018 events; ISWA JSON "
-            "deposits start ~2018 for most contributing models); synthetic "
-            "proxies substituted"
-        )
+        # Don't blanket-tag the whole event; per-component fallback labels
+        # each tuple individually downstream.
         return {}
 
     out: dict[str, list[tuple[datetime, float]]] = {}
-    for ts, model_id, prob in envelopes:
-        out.setdefault(model_id, []).append((ts, prob))
+    for ts, component_id, prob in envelopes:
+        out.setdefault(component_id, []).append((ts, prob))
 
     result: dict[str, pd.DataFrame] = {}
-    for model_id, rows in out.items():
-        if model_id not in models:
+    for component_id, rows in out.items():
+        if component_id not in models:
             continue
         df = pd.DataFrame(rows, columns=["timestamp", "probability"]).sort_values("timestamp")
         if not df.empty:
-            result[model_id] = df.reset_index(drop=True)
+            result[component_id] = df.reset_index(drop=True)
     return result
 
 
 async def _async_pull_scoreboards(event: TrainingEvent) -> list[tuple[datetime, str, float]]:
-    """Pull Scoreboard A onset-probability records for an event window."""
+    """Pull Scoreboard A onset-probability records for an event window.
+
+    v2: each record is mapped to a ``component_id`` of the form
+    ``<short_name>/<variants>/<energy>`` using the same identity scheme as
+    :data:`DEFAULT_COMPONENT_MODELS`. Because the adapter's ``value`` dict
+    does not surface the variant chain directly, we derive variants from
+    the ``source`` URL when possible; the registry lookup is best-effort.
+    """
     from helios_connectors import SepScoreboardsAdapter
+    from helios_connectors.adapters.sep_scoreboards import (
+        ISWA_SCOREBOARD_PREFIX,
+        SCOREBOARD_MODELS,
+    )
+
+    # Build a name -> [variants] map so we can disambiguate models with
+    # multiple variants (UMASEP v2_0 vs v3_X, etc.) using the URL.
+    variants_by_name: dict[str, list[tuple[str, ...]]] = {}
+    for spec in SCOREBOARD_MODELS:
+        variants_by_name.setdefault(spec.name, []).append(spec.variants)
 
     out: list[tuple[datetime, str, float]] = []
     try:
@@ -451,18 +601,92 @@ async def _async_pull_scoreboards(event: TrainingEvent) -> list[tuple[datetime, 
             async for rec in sb.fetch_scoreboard_a(  # type: ignore[attr-defined]
                 start=event.window_start, end=event.window_end
             ):
-                model_id = rec.value.get("model") if isinstance(rec.value, dict) else None
-                prob = rec.value.get("probability") if isinstance(rec.value, dict) else None
-                if model_id is None or prob is None:
+                if not isinstance(rec.value, dict):
                     continue
+                short_name = rec.value.get("model")
+                prob = rec.value.get("probability")
+                if short_name is None or prob is None:
+                    continue
+                # Find the source URL to infer variants.
+                source_url = ""
+                with contextlib.suppress(AttributeError, IndexError):
+                    source_url = rec.provenance.dataset_refs[0]
+                variants = _infer_variants(
+                    str(short_name), source_url, variants_by_name, prefix=ISWA_SCOREBOARD_PREFIX
+                )
+                # Energy directory (when applicable) is embedded in the URL
+                # path right after the variants chain.
+                energy = _infer_energy(source_url, str(short_name), variants)
+                component_id = _component_id_from_spec(str(short_name), variants, energy)
                 try:
-                    out.append((rec.event_time, str(model_id), float(prob)))
+                    out.append((rec.event_time, component_id, float(prob)))
                 except (TypeError, ValueError):
                     continue
     except Exception as exc:
         logger.debug("scoreboard fetch errored for %s: %s", event.event_id, exc)
         return []
     return out
+
+
+def _infer_variants(
+    short_name: str,
+    source_url: str,
+    variants_by_name: dict[str, list[tuple[str, ...]]],
+    *,
+    prefix: str,
+) -> tuple[str, ...]:
+    """Best-effort variant inference from the source URL.
+
+    The URL looks like ``.../sep_scoreboard/<name>/<variants>/<year>/...``.
+    We strip the prefix + name and walk segments matching one of the
+    registered variant chains for this name.
+    """
+    candidates = variants_by_name.get(short_name, [])
+    if not candidates:
+        return ()
+    if not source_url:
+        return candidates[0]
+    # Extract the path between "<prefix>/<name>/" and the year.
+    needle = f"{prefix}/{short_name}/"
+    idx = source_url.find(needle)
+    if idx == -1:
+        return candidates[0]
+    tail = source_url[idx + len(needle) :]
+    parts = tail.split("/")
+    # Strip the year-and-beyond portion (a 4-digit numeric segment).
+    variant_parts: list[str] = []
+    for p in parts:
+        if len(p) == 4 and p.isdigit():
+            break
+        variant_parts.append(p)
+    # Match against the registered candidates — longest prefix match.
+    inferred = tuple(variant_parts)
+    for cand in sorted(candidates, key=len, reverse=True):
+        if inferred[: len(cand)] == cand:
+            return cand
+    return candidates[0]
+
+
+def _infer_energy(
+    source_url: str,
+    short_name: str,
+    variants: tuple[str, ...],  # noqa: ARG001
+) -> str:
+    """Extract the energy directory from a scoreboard URL (UMASEP only).
+
+    Most v0.2.1 models use empty-energy paths; only UMASEP uses an explicit
+    energy directory between the variants and the year.
+    """
+    if not source_url or short_name != "UMASEP":
+        return ""
+    tail = source_url.rsplit("/", 1)[0]  # strip filename
+    segs = tail.split("/")
+    # The energy is the segment immediately before the year (last numeric
+    # 4-digit segment) and before the month (2-digit segment).
+    for i in range(len(segs) - 1, -1, -1):
+        if segs[i].endswith("MeV"):
+            return segs[i]
+    return ""
 
 
 def _resample_to_grid(df: pd.DataFrame, grid: list[datetime]) -> np.ndarray:
@@ -481,6 +705,27 @@ def _resample_to_grid(df: pd.DataFrame, grid: list[datetime]) -> np.ndarray:
     return out
 
 
+def _resample_truth_to_grid(truth_df: pd.DataFrame, grid: list[datetime]) -> np.ndarray:
+    """Project SWPC archive (timestamp, observed) labels onto the grid.
+
+    The truth dataframe is expected to carry a binary ``observed`` column
+    plus a ``timestamp`` column with onset windows. We mark each grid
+    point as 1 if it falls within any onset window, else 0.
+    """
+    if truth_df.empty or "timestamp" not in truth_df.columns:
+        return np.zeros(len(grid), dtype=np.float64)
+    s = truth_df.sort_values("timestamp").reset_index(drop=True)
+    out = np.zeros(len(grid), dtype=np.float64)
+    last = 0.0
+    j = 0
+    for i, ts in enumerate(grid):
+        while j < len(s) and s["timestamp"].iloc[j] <= ts:
+            last = float(s["observed"].iloc[j])
+            j += 1
+        out[i] = last
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # Synthetic-proxy generators (documented; clearly labelled in the dataframe)
 # --------------------------------------------------------------------------- #
@@ -492,12 +737,7 @@ def _synthesize_kp_profile(
     *,
     rng: np.random.Generator,
 ) -> np.ndarray:
-    """Build a synthetic Kp profile centred on the event onset.
-
-    Quiescent baseline (Kp ~ 2) with a Gaussian disturbance bump centred on
-    each onset peaking near Kp ~ 7-8 (consistent with the X-class flare
-    signatures documented in Table 3-1).
-    """
+    """Build a synthetic Kp profile centred on the event onset."""
     onset_ts = [event.onset, *event.secondary_onsets]
     kp = np.full(len(grid), 2.0, dtype=np.float64)
     sigma_hours = 36.0
@@ -516,13 +756,12 @@ def _synthesize_truth(
     *,
     rng: np.random.Generator,
 ) -> np.ndarray:
-    """Build a binary "SEP event in window" label series.
+    """v1 fallback: build a binary "SEP event in window" label series.
 
     Within +/-24 hours of any onset and where Kp >= 4, mark as event = 1.
-    This is the canonical SEP all-clear-revocation labelling pattern (the
-    operationally-relevant signal is "would we have revoked the all-clear
-    at this hour?"). The +/-24 hour bracket matches the standard 24-h
-    forecast horizon.
+    This is retained only as the synthetic-truth fallback when SWPC archive
+    labels are not supplied. v2 callers should prefer
+    :func:`helios_fusion.training.swpc_sep_archive.event_truth_labels`.
     """
     onsets = [event.onset, *event.secondary_onsets]
     out = np.zeros(len(grid), dtype=np.float64)
@@ -545,19 +784,11 @@ def _synthesize_proxy_stream(
     *,
     rng: np.random.Generator,
 ) -> np.ndarray:
-    """Build a per-model probability proxy stream.
+    """Build a per-component probability proxy stream.
 
-    Each model gets a deterministic bias keyed by a hash of its model_id, so
-    the synthetic streams reproducibly differ. Three bias archetypes:
-
-    * ``UMASEP`` / ``SEPMOD`` / ``MagPy`` / consensus boards -- near
-      well-calibrated, small Gaussian noise.
-    * ``SEPSTER`` / ``SEPSTER2D`` -- mildly under-confident (pulled toward
-      0.5 by 30%).
-    * ``SPRINTS-SEP`` / ``iPATH`` / ``SAWS_ASPECS`` -- mildly over-confident.
-
-    The true posterior is ``sigmoid(0.9 * (kp - 4.5))`` matching the locked
-    synthetic-pipeline expectation in :mod:`tests.conftest`.
+    Each component gets a deterministic bias keyed by a hash of its
+    component_id, so the synthetic streams reproducibly differ. Three
+    bias archetypes (well-calibrated, under-confident, over-confident).
     """
     p_true = 1.0 / (1.0 + np.exp(-0.9 * (kp_series - 4.5)))
     bias_key = (hash(model_id) & 0xFF) % 3
@@ -577,6 +808,8 @@ def _synthesize_proxy_stream(
 
 __all__ = [
     "DEFAULT_COMPONENT_MODELS",
+    "DEFAULT_COMPONENT_MODELS_LEGACY",
+    "EMPIRICAL_ISWA_COVERAGE",
     "EVENT_WINDOW_HALF_WIDTH_DAYS",
     "TRAINING_EVENTS",
     "SeverityStratum",
