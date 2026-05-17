@@ -45,7 +45,8 @@ import pydantic
 from helios_fusion.training.fit_bma import fit_bma_priors
 from helios_fusion.training.fit_conformal import fit_mondrian_conformal, fit_split_conformal
 from helios_fusion.training.fit_isotonic import fit_stratified_calibrators
-from helios_fusion.training.load_table_3_1 import load_all_training_events
+from helios_fusion.training.load_table_3_1 import TRAINING_EVENTS, load_all_training_events
+from helios_fusion.training.swpc_sep_archive import event_truth_labels, fetch_sep_event_list
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -88,27 +89,62 @@ def run_full_training(
     cadence_hours: float = 1.0,
     rng_seed: int | None = None,
     frames: Iterable[TrainingEventFrame] | None = None,
+    use_swpc_archive_truth: bool = True,
+    swpc_archive_html: str | None = None,
 ) -> TrainingArtifacts:
     """Run the four sequential fits and return all artifacts.
 
+    v2 (Sprint C-Training-v2): the BMA / isotonic / conformal fits are now
+    supervised against **SWPC SEP-event archive** ground-truth labels when
+    ``use_swpc_archive_truth=True`` (the default). The closed-loop
+    synthetic-truth path is retained as a fallback for offline test runs.
+
     Args:
         use_real_data: If ``True``, attempt live ISWA / SWPC pulls (with
-            synthetic-proxy fallback for sources that don't cover the
-            event). If ``False``, skip the network entirely.
+            per-component-per-event synthetic-proxy fallback). If
+            ``False``, skip the network entirely.
         cadence_hours: Time-grid cadence for the per-event dataframes.
         rng_seed: Override the synthetic-proxy seed.
         frames: Optional pre-loaded list of training-event frames. If
-            provided, the loader is NOT invoked. Useful for tests and for
-            re-running fits without re-pulling data.
+            provided, the loader is NOT invoked.
+        use_swpc_archive_truth: If ``True`` (default), fetch the NOAA SESC
+            SEP-event archive once and label each training event with the
+            observed onset/peak windows. Falls back to synthetic-truth
+            if the archive fetch fails.
+        swpc_archive_html: Optional pre-fetched archive HTML string
+            (bypasses the network — used by tests with the recorded
+            fixture).
 
     Returns:
         A :class:`TrainingArtifacts` bundle.
     """
     if frames is None:
+        # Build per-event SWPC truth labels first (when enabled).
+        truth_by_event: dict[str, Any] | None = None
+        if use_swpc_archive_truth:
+            try:
+                archive_df = fetch_sep_event_list(html=swpc_archive_html)
+                truth_by_event = {}
+                for ev in TRAINING_EVENTS:
+                    truth_by_event[ev.event_id] = event_truth_labels(
+                        ev.event_id,
+                        (ev.window_start, ev.window_end),
+                        archive_df=archive_df,
+                        cadence_hours=cadence_hours,
+                    )
+                logger.info("loaded SWPC archive truth labels for %d events", len(truth_by_event))
+            except (RuntimeError, OSError, ValueError) as exc:
+                logger.warning(
+                    "SWPC archive fetch failed (%s); falling back to synthetic truth",
+                    exc,
+                )
+                truth_by_event = None
+
         frames_list = load_all_training_events(
             use_real_data=use_real_data,
             cadence_hours=cadence_hours,
             rng_seed=rng_seed,
+            truth_labels_by_event=truth_by_event,
         )
     else:
         frames_list = list(frames)
@@ -358,41 +394,91 @@ def persist_artifacts(
         ),
     )
 
-    # 5. Manifest.
-    manifest = {
+    # 5. Manifest. v2: append a new entry to training_runs[] preserving
+    #    any v1 entry. The manifest schema is now an array of training-run
+    #    records rather than a single object.
+    new_run_entry = {
         "training_run_id": training_run_id,
         "training_run_date_utc": datetime.now(UTC).isoformat(),
         "fusion_engine_version": _fusion_engine_version(),
         "fusion_engine_git_sha": git_sha,
         "connectors_version": _package_version("helios-spaceweather-connectors"),
         "provenance_spec_version": _package_version("helios-provenance-spec"),
-        "training_events": [
-            {
-                "event_id": f.event.event_id,
-                "label": f.event.label,
-                "onset_utc": f.event.onset.isoformat(),
-                "secondary_onsets_utc": [o.isoformat() for o in f.event.secondary_onsets],
-                "n_rows": len(f.records),
-                "component_models": list(f.component_models),
-                "data_gaps": dict(f.data_gaps),
-                "synthetic_proxy_rows": int((f.records["source"] == "synthetic_proxy").sum())
-                if not f.records.empty
-                else 0,
-                "iswa_rows": int((f.records["source"] == "iswa").sum())
-                if not f.records.empty
-                else 0,
-            }
-            for f in artifacts.frames
-        ],
+        "training_events": [_summarize_event_frame(f) for f in artifacts.frames],
         "artifacts": {name: path.name for name, path in written.items()},
         "osf_preregistration_url": osf_preregistration_url,
     }
     manifest_path = weights_dir / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=False) + "\n")
+    manifest_doc = _merge_into_training_runs(manifest_path, new_run_entry)
+    manifest_path.write_text(json.dumps(manifest_doc, indent=2, sort_keys=False) + "\n")
     written["manifest"] = manifest_path
 
     logger.info("persisted %d artifacts to %s", len(written), weights_dir)
     return written
+
+
+def _summarize_event_frame(f: TrainingEventFrame) -> dict[str, Any]:
+    """Build the per-event manifest record (v2 source-aware)."""
+    if f.records.empty:
+        source_counts: dict[str, int] = {}
+        truth_counts: dict[str, int] = {}
+    else:
+        source_counts = {
+            str(k): int(v) for k, v in f.records["source"].value_counts().to_dict().items()
+        }
+        if "truth_source" in f.records.columns:
+            truth_counts = {
+                str(k): int(v)
+                for k, v in f.records["truth_source"].value_counts().to_dict().items()
+            }
+        else:
+            truth_counts = {}
+
+    # Per-component source label map (one entry per registered component).
+    component_sources: dict[str, str] = {}
+    if not f.records.empty:
+        by_model = f.records.groupby("model_id")["source"].first().to_dict()
+        component_sources = {str(k): str(v) for k, v in by_model.items()}
+
+    return {
+        "event_id": f.event.event_id,
+        "label": f.event.label,
+        "onset_utc": f.event.onset.isoformat(),
+        "secondary_onsets_utc": [o.isoformat() for o in f.event.secondary_onsets],
+        "n_rows": len(f.records),
+        "component_models": list(f.component_models),
+        "data_gaps": dict(f.data_gaps),
+        "source_row_counts": source_counts,
+        "truth_source_row_counts": truth_counts,
+        "truth_source": getattr(f, "truth_source", "synthetic_kp_derived"),
+        "component_source_labels": component_sources,
+    }
+
+
+def _merge_into_training_runs(manifest_path: Path, new_run_entry: dict[str, Any]) -> dict[str, Any]:
+    """Read an existing manifest (v1 single-object or v2 array form) and
+    append the new entry to a ``training_runs`` list, preserving prior runs.
+
+    v1 manifests stored a single training-run as the top-level object; we
+    detect that shape by the absence of a ``training_runs`` key and migrate
+    in place.
+    """
+    if manifest_path.exists():
+        try:
+            existing = json.loads(manifest_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            existing = None
+    else:
+        existing = None
+
+    runs: list[dict[str, Any]] = []
+    if isinstance(existing, dict):
+        if "training_runs" in existing and isinstance(existing["training_runs"], list):
+            runs = list(existing["training_runs"])
+        elif "training_run_id" in existing:
+            # v1 single-run shape — promote to first entry of the new array.
+            runs = [existing]
+    return {"training_runs": [*runs, new_run_entry]}
 
 
 def _write_provenance(path: Path, payload: dict[str, Any]) -> None:
