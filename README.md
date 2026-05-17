@@ -1,6 +1,6 @@
 # helios-fusion-engine
 
-[![CI](https://github.com/577-Industries/helios-fusion-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/577-Industries/helios-fusion-engine/actions/workflows/ci.yml) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI](https://github.com/577Industries/helios-fusion-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/577Industries/helios-fusion-engine/actions/workflows/ci.yml) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI](https://img.shields.io/pypi/v/helios-fusion-engine.svg)](https://pypi.org/project/helios-fusion-engine/)
 
 > Model-agnostic probabilistic fusion of heterogeneous space-weather model outputs: Bayesian Model Averaging orchestrator, isotonic-regression reliability calibrator, split + Mondrian conformal prediction wrappers, and severity-stratified validation harness with CCMC-compatible metrics (HSS, TSS, POD, FAR, Brier, CRPS). Framework only; trained weights/configs live in the private helios-fusion-internal companion repo.
@@ -27,10 +27,10 @@ print(helios_fusion.__version__)
 
 ## Documentation
 
-- **Master plan**: see [`helios-program`](https://github.com/577-Industries/helios-program) (private; internal team)
+- **Master plan**: see [`helios-program`](https://github.com/577Industries/helios-program) (private; internal team)
 - **Specification**: docs published at the project's docs site when available
 - **Provenance**: every output traces to its upstream model and transformation chain
-  via [`helios-provenance-spec`](https://github.com/577-Industries/helios-provenance-spec)
+  via [`helios-provenance-spec`](https://github.com/577Industries/helios-provenance-spec)
 
 ## License
 
@@ -48,6 +48,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Substantive changes should be discussed 
   title        = { helios-fusion-engine: Model-agnostic probabilistic fusion of heterogeneous space-weather model outputs: Bayesian Model Averaging orchestrator, isotonic-regression reliability calibrator, split + Mondrian conformal prediction wrappers, and severity-stratified validation harness with CCMC-compatible metrics (HSS, TSS, POD, FAR, Brier, CRPS) },
   year         = {2026},
   publisher    = {577 Industries Inc.},
-  url          = {https://github.com/577-Industries/helios-fusion-engine},
+  url          = {https://github.com/577Industries/helios-fusion-engine},
 }
 ```

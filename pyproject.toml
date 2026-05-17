@@ -53,10 +53,10 @@
         ]
 
         [project.urls]
-        Homepage = "https://github.com/577-Industries/helios-fusion-engine"
-        Repository = "https://github.com/577-Industries/helios-fusion-engine.git"
-        Issues = "https://github.com/577-Industries/helios-fusion-engine/issues"
-        Documentation = "https://577-industries.github.io/helios-fusion-engine"
+        Homepage = "https://github.com/577Industries/helios-fusion-engine"
+        Repository = "https://github.com/577Industries/helios-fusion-engine.git"
+        Issues = "https://github.com/577Industries/helios-fusion-engine/issues"
+        Documentation = "https://577industries.github.io/helios-fusion-engine"
 
         [tool.hatch.version]
         path = "src/helios_fusion/__init__.py"
