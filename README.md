@@ -142,3 +142,11 @@ discussed in an issue first.
   url          = {https://github.com/577Industries/helios-fusion-engine},
 }
 ```
+
+## Related
+
+- **HELIOS program**: [`helios-program`](https://github.com/577Industries/helios-program) — master plan, proposal companion document, orchestration scripts.
+- **Wave 1 review pack**: [Artifact C framework review pack](https://github.com/577Industries/helios-program/blob/main/specs/2026-05-17-C-fusion-engine-framework-review-pack.md) — synthetic-data demo numbers, design decisions, deviations from proposal §2 Obj. 2 (conformal from-scratch, Platt shipped for reproducible-rejection).
+- **OSF pre-registration template**: [`orchestration/osf_preregistration.template.md`](https://github.com/577Industries/helios-program/blob/main/orchestration/osf_preregistration.template.md) — **must** be filed publicly **before** hold-out evaluation runs. The kill-gate runner (`orchestration/kill_gate.py`) refuses to execute without an OSF URL on file at `orchestration/osf_preregistration.url`. Decision rules: PASS both H1+H2 → full arXiv paper; PASS one → ablation paper; FAIL both → no paper.
+- **Provenance schema**: [`helios-provenance-spec`](https://github.com/577Industries/helios-provenance-spec) — `ModelOutput`, `FusedOutput`, `LineageStep` types align with this schema.
+- **Trained weights / BMA priors** (private companion): `helios-fusion-internal` — fitted on Table 3-1 training events; not redistributed.
