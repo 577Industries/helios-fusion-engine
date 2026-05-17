@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software in academic work, please cite as below."
+title: "helios-fusion-engine"
+abstract: "Model-agnostic probabilistic fusion of heterogeneous space-weather model outputs: Bayesian Model Averaging orchestrator, isotonic-regression reliability calibrator, split + Mondrian conformal prediction wrappers, and severity-stratified validation harness with CCMC-compatible metrics (HSS, TSS, POD, FAR, Brier, CRPS). Framework only; trained weights/configs live in the private helios-fusion-internal companion repo."
+authors:
+  - family-names: Waweru
+    given-names: Thomas
+    email: t.waweru@577industries.com
+    affiliation: 577 Industries Inc.
+keywords:
+  - heliophysics
+  - space weather
+  - machine learning
+  - provenance
+license: Apache-2.0
+repository-code: "https://github.com/577-Industries/helios-fusion-engine"
+url: "https://github.com/577-Industries/helios-fusion-engine"
+type: software
+version: 0.0.0
+date-released: "2026-05-17"

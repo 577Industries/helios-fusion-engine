@@ -1,0 +1,44 @@
+site_name: helios-fusion-engine
+site_description: "Model-agnostic probabilistic fusion of heterogeneous space-weather model outputs: Bayesian Model Averaging orchestrator, isotonic-regression reliability calibrator, split + Mondrian conformal prediction wrappers, and severity-stratified validation harness with CCMC-compatible metrics (HSS, TSS, POD, FAR, Brier, CRPS)."
+site_url: "https://577-industries.github.io/helios-fusion-engine/"
+repo_url: "https://github.com/577-Industries/helios-fusion-engine"
+repo_name: 577-Industries/helios-fusion-engine
+copyright: "Copyright 2026 577 Industries Inc."
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - toc.integrate
+    - search.suggest
+    - content.code.copy
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: amber
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
