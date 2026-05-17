@@ -42,3 +42,6 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Architecture: architecture.md
+  - Baselines: baselines.md
+  - API: api/index.md
