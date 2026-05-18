@@ -1,0 +1,273 @@
+\begin{thebibliography}{10}
+
+\bibitem{lloyds2013}
+{Solar Storm Risk to the North American Electric Grid}.
+\newblock Technical report, {Lloyd's of London and AER, Inc.}, 2013.
+
+\bibitem{eo13744}
+{Executive Order No. 13744: Coordinating Efforts to Prepare the Nation for
+  Space Weather Events}, 2016.
+
+\bibitem{benchmarks2018}
+{Space Weather Phase 1 Benchmarks}.
+\newblock Technical report, {SWORM Subcommittee}, 2018.
+
+\bibitem{eo13865}
+{Executive Order No. 13865: Coordinating National Resilience to Electromagnetic
+  Pulses}, 2019.
+
+\bibitem{sae2020}
+{Effect of Space Weather on Autonomous Vehicle Navigation}.
+\newblock Technical Report 2020-01-0140, {SAE International}, 2020.
+
+\bibitem{proswift2020}
+{Promoting Research and Observations of Space Weather to Improve the
+  Forecasting of Tomorrow Act (PROSWIFT)}.
+\newblock Pub.~L. No. 116--181, 134 Stat. 886, 2020.
+
+\bibitem{seesaw2022}
+{Space Environment Engineering and Science Applications Workshop ---Ionospheric
+  Impacts: Precision Agriculture (SEESAW-II)}.
+\newblock Technical report, {USDA ARS}, 2022.
+
+\bibitem{ntrs_brazil2025}
+{Assessment of Space Weather Impact on Precision Agriculture Using GNSS in
+  Brazilian Farms}.
+\newblock Technical report, {NASA NTRS}, 2025.
+
+\bibitem{gannon_rtk}
+{577 Industries Inc.}
+\newblock {gannon-storm-rtk-analysis: reproducible retrospective of the May
+  2024 Gannon G5 storm RTK impact}.
+\newblock \url{https://github.com/577Industries/gannon-storm-rtk-analysis},
+  2026.
+\newblock v0.1.0.
+
+\bibitem{helios_fusion_engine}
+{577 Industries Inc.}
+\newblock {helios-fusion-engine: calibrated, provenance-tracked fusion
+  framework for heliophysics model outputs}.
+\newblock \url{https://github.com/577Industries/helios-fusion-engine}, 2026.
+\newblock v0.1.2.
+
+\bibitem{helios_program}
+{577 Industries Inc.}
+\newblock {helios-program: master plan, companion, and orchestration for
+  HELIOS}.
+\newblock \url{https://github.com/577Industries/helios-program}, 2026.
+\newblock v0.2.0.
+
+\bibitem{helios_provenance_spec}
+{577 Industries Inc.}
+\newblock {helios-provenance-spec: feature-level provenance schema for
+  heliophysics fusion (RFC-0001)}.
+\newblock \url{https://github.com/577Industries/helios-provenance-spec}, 2026.
+\newblock v0.1.0.
+
+\bibitem{helios_connectors}
+{577 Industries Inc.}
+\newblock {helios-spaceweather-connectors: production-grade Python adapters for
+  federal space-weather sources}.
+\newblock
+  \url{https://github.com/577Industries/helios-spaceweather-connectors}, 2026.
+\newblock v0.2.1.
+
+\bibitem{afbf2024}
+{American Farm Bureau Federation}.
+\newblock {Precision Agriculture Technology Survey Results}.
+\newblock Technical report, 2024.
+
+\bibitem{bobra2015}
+M.~G. Bobra and S.~Couvidat.
+\newblock {Solar Flare Prediction Using SDO/HMI Vector Magnetic Field Data}.
+\newblock {\em Astrophysical Journal}, 798:135, 2015.
+
+\bibitem{brier1950}
+G.~W. Brier.
+\newblock {Verification of forecasts expressed in terms of probability}.
+\newblock {\em Monthly Weather Review}, 78(1):1--3, 1950.
+
+\bibitem{colladovega2023}
+Y.~Collado-Vega et~al.
+\newblock {CCMC Space Weather Research Analysis for NASA Robotic Missions}.
+\newblock Technical report, {NASA Technical Reports Server}, 2023.
+
+\bibitem{donaldson1975}
+R.~J. Donaldson, R.~M. Dyer, and M.~J. Kraus.
+\newblock {An objective evaluator of techniques for predicting severe weather
+  events}.
+\newblock {\em Preprints, Ninth Conference on Severe Local Storms, American
+  Meteorological Society}, pages 321--326, 1975.
+
+\bibitem{hapgood2023}
+M.~A. Hapgood et~al.
+\newblock {The Space Weather Science and Observation Gap Analysis}.
+\newblock {\em Advances in Space Research}, 72(12):5389--5417, 2023.
+
+\bibitem{hersbach2000}
+H.~Hersbach.
+\newblock {Decomposition of the continuous ranked probability score for
+  ensemble prediction systems}.
+\newblock {\em Weather and Forecasting}, 15(5):559--570, 2000.
+
+\bibitem{hoeting1999}
+J.~A. Hoeting, D.~Madigan, A.~E. Raftery, and C.~T. Volinsky.
+\newblock {Bayesian Model Averaging: A Tutorial}.
+\newblock {\em Statistical Science}, 14(4):382--417, 1999.
+
+\bibitem{lim2021}
+B.~Lim, S.~{\"O}. Ar{\i}k, N.~Loeff, and T.~Pfister.
+\newblock {Temporal Fusion Transformers for interpretable multi-horizon time
+  series forecasting}.
+\newblock {\em International Journal of Forecasting}, 37(4):1748--1764, 2021.
+
+\bibitem{londecon2017}
+{London Economics}.
+\newblock {The Economic Impact on the UK of a Disruption to GNSS}.
+\newblock Technical report, 2017.
+
+\bibitem{mertens2025}
+C.~J. Mertens et~al.
+\newblock {NAIRAS Version 3 Atmospheric Ionizing Radiation Validation}.
+\newblock {\em Space Weather}, 23, 2025.
+
+\bibitem{donki}
+{NASA CCMC}.
+\newblock {DONKI: Space Weather Database of Notifications, Knowledge,
+  Information}.
+\newblock \url{https://kauai.ccmc.gsfc.nasa.gov/DONKI/}, 2024.
+\newblock Accessed 2026-05-18.
+
+\bibitem{hesperia}
+{NASA CCMC}.
+\newblock {HESPERIA REleASE Model Page}.
+\newblock \url{https://ccmc.gsfc.nasa.gov/models/HESPERIA_REleASE~v20190101/},
+  2024.
+\newblock Commercial-use licensing note; accessed 2026-05-18.
+
+\bibitem{ccmc_iswa}
+{NASA CCMC}.
+\newblock {Integrated Space Weather Analysis (iSWA) system}.
+\newblock \url{https://iswa.ccmc.gsfc.nasa.gov/}, 2024.
+\newblock Accessed 2026-05-18.
+
+\bibitem{ccmc}
+{NASA GSFC}.
+\newblock {Community Coordinated Modeling Center}.
+\newblock \url{https://ccmc.gsfc.nasa.gov}, 2024.
+\newblock Accessed 2026-05-18.
+
+\bibitem{m2mswao}
+{NASA GSFC}.
+\newblock {Moon to Mars Space Weather Analysis Office}.
+\newblock \url{https://science.gsfc.nasa.gov/674/m2m-website.html}, 2024.
+\newblock Accessed 2026-05-18.
+
+\bibitem{sepscoreboard}
+{NASA SRAG}.
+\newblock {SEP Scoreboard}.
+\newblock \url{https://srag.jsc.nasa.gov/SpaceWeather/SEPScoreboard.cfm}, 2024.
+\newblock Accessed 2026-05-18.
+
+\bibitem{decadal2025}
+{National Academies of Sciences, Engineering, and Medicine}.
+\newblock {\em {Decadal Survey for Solar and Space Physics (Heliophysics)
+  2024--2033}}.
+\newblock {The National Academies Press}, 2025.
+
+\bibitem{nstc2019}
+{National Science and Technology Council}.
+\newblock {National Space Weather Strategy and Action Plan}.
+\newblock Technical report, {Executive Office of the President}, 2019.
+
+\bibitem{niculescu2005}
+A.~Niculescu-Mizil and R.~Caruana.
+\newblock {Predicting good probabilities with supervised learning}.
+\newblock In {\em {Proceedings of the 22nd International Conference on Machine
+  Learning (ICML)}}, pages 625--632, 2005.
+
+\bibitem{noaa_sesc}
+{NOAA Space Environment Services Center}.
+\newblock {Solar Proton Events Affecting the Earth Environment, 1976--present}.
+\newblock \url{https://umbra.nascom.nasa.gov/SEP/seps.html}, 2024.
+\newblock Accessed 2026-05-18.
+
+\bibitem{osuext2024}
+{OSU Extension}.
+\newblock {Space Weather Disturbances and Farm GPS Interruptions}.
+\newblock Technical report, 2024.
+
+\bibitem{platt1999}
+J.~Platt.
+\newblock {Probabilistic outputs for support vector machines and comparisons to
+  regularized likelihood methods}.
+\newblock {\em Advances in Large Margin Classifiers}, 10(3):61--74, 1999.
+
+\bibitem{poduval2023}
+B.~Poduval et~al.
+\newblock {AI-ready data in space science and solar physics}.
+\newblock {\em Frontiers in Astronomy and Space Sciences}, 10, 2023.
+
+\bibitem{spacereport2025}
+{Space Foundation}.
+\newblock {The Space Report 2025 Q2: Global Space Economy at \$613 Billion}.
+\newblock Technical report, 2025.
+
+\bibitem{swag2023}
+{Space Weather Advisory Group}.
+\newblock {Findings and Recommendations to Successfully Implement PROSWIFT and
+  Transform the National Space Weather Enterprise}.
+\newblock Technical report, {NOAA/OFCM}, 2023.
+
+\bibitem{starion2024}
+{Starion Group}.
+\newblock {Space Weather: A Risk to Autonomous Transport?}
+\newblock Technical report, 2024.
+
+\bibitem{sun2023}
+Z.~Sun et~al.
+\newblock {Operational prediction of solar flares using a transformer-based
+  framework}.
+\newblock {\em Scientific Reports}, 13:12603, 2023.
+
+\bibitem{r2o2r2022}
+{SWORM Subcommittee}.
+\newblock {Space Weather Research-to-Operations and Operations-to-Research
+  Framework}.
+\newblock Technical report, {NSTC}, 2022.
+
+\bibitem{vovk2022}
+V.~Vovk, A.~Gammerman, and G.~Shafer.
+\newblock {\em {Algorithmic Learning in a Random World}}.
+\newblock Springer, 2 edition, 2022.
+
+\bibitem{vovk2005}
+V.~Vovk, D.~Lindsay, I.~Nouretdinov, and A.~Gammerman.
+\newblock {Mondrian confidence machine}.
+\newblock {\em Technical Report, Royal Holloway, University of London}, 2003.
+
+\bibitem{osf_prereg}
+T.~Waweru.
+\newblock {HELIOS pre-registration: calibrated SEP all-clear fusion kill-gate}.
+\newblock Open Science Framework, 2026.
+\newblock URL placeholder; replaced at submission. See
+  \texttt{helios-program/orchestration/osf\_preregistration.url}.
+
+\bibitem{whitman2023}
+K.~Whitman et~al.
+\newblock {Tools Used in Space Radiation Operations}.
+\newblock Technical report, {NASA Technical Reports Server}, 2023.
+
+\bibitem{whitman2024}
+K.~Whitman et~al.
+\newblock {NASA's Ongoing SEP Model Validation Effort Driving an Effective
+  R2O2R Process}.
+\newblock In {\em {COSPAR Scientific Assembly}}, 2024.
+
+\bibitem{zadrozny2002}
+B.~Zadrozny and C.~Elkan.
+\newblock {Transforming classifier scores into accurate multiclass probability
+  estimates}.
+\newblock {\em Proceedings of the 8th ACM SIGKDD}, pages 694--699, 2002.
+
+\end{thebibliography}

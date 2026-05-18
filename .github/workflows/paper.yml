@@ -1,0 +1,90 @@
+# Build the HELIOS arXiv preprint PDF on every push to feat/v0.2-paper.
+# Uploads main.pdf as a workflow artifact. Does NOT create a GitHub release
+# - the operator releases after the kill-gate fill-in and merge to main.
+#
+# Security: this workflow does not consume any untrusted user input from
+# issues/PRs/comments. The only inputs are the repository contents on the
+# triggering push or pull_request, which are subject to standard branch
+# protection rules.
+
+name: paper
+
+on:
+  push:
+    branches:
+      - feat/v0.2-paper
+    paths:
+      - "paper/**"
+      - ".github/workflows/paper.yml"
+  pull_request:
+    paths:
+      - "paper/**"
+      - ".github/workflows/paper.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: pdflatex + bibtex
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python (for figure regeneration)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install matplotlib (figure regen)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install matplotlib
+
+      - name: Regenerate hermetic figures
+        run: |
+          python paper/figures/build_architecture.py
+          python paper/figures/build_placeholder_results.py
+          python paper/figures/build_gannon_bz_timeline.py
+
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-bibtex-extra \
+            latexmk
+
+      - name: Build PDF
+        working-directory: paper
+        run: |
+          latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: helios-fusion-engine-preprint
+          path: paper/main.pdf
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload aux artifacts for arXiv submission
+        uses: actions/upload-artifact@v4
+        with:
+          name: helios-fusion-engine-preprint-aux
+          path: |
+            paper/main.tex
+            paper/refs.bib
+            paper/tables/
+            paper/figures/*.png
+            paper/main.bbl
+            paper/COVER_LETTER.md
+            paper/SUBMISSION_CHECKLIST.md
+          if-no-files-found: error
+          retention-days: 90

@@ -1,0 +1,20 @@
+%% HELIOS dependency graph (reference Mermaid source).
+%% Rendered to architecture.png via figures/build_architecture.py (matplotlib).
+%% Kept here for human-readable reference / GitHub Pages preview parity.
+graph LR
+    A[helios-provenance-spec<br/>v0.1.0<br/>JSON Schema + pydantic v2]
+    B[helios-spaceweather-connectors<br/>v0.2.1<br/>6 federal adapters]
+    C[helios-fusion-engine<br/>v0.1.2<br/>BMA + isotonic + conformal]
+    F[helios-fusion-internal<br/>private<br/>trained weights]
+    D[gannon-storm-rtk-analysis<br/>v0.1.0<br/>retrospective]
+    P[helios-program<br/>v0.2.0<br/>plan + companion + orchestration]
+
+    A --> B
+    A --> C
+    B --> C
+    B --> D
+    C --> F
+    P -.- A
+    P -.- B
+    P -.- C
+    P -.- D

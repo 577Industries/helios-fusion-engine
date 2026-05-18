@@ -1,0 +1,19 @@
+# LaTeX auxiliary outputs — regenerated on every build, never committed.
+*.aux
+*.log
+*.out
+*.toc
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# main.bbl IS committed (arXiv requires it in the upload bundle), but the
+# log/aux byproducts above are not. Override the .bbl exclusion if your
+# global .gitignore catches it.
+!main.bbl
+
+# OS / editor cruft.
+.DS_Store
+*.swp
+*~
