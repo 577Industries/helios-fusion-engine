@@ -58,7 +58,10 @@ jobs:
             texlive-latex-recommended \
             texlive-latex-extra \
             texlive-fonts-recommended \
+            texlive-fonts-extra \
             texlive-bibtex-extra \
+            lmodern \
+            cm-super \
             latexmk
 
       - name: Build PDF

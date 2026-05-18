@@ -42,8 +42,8 @@ import matplotlib.pyplot as plt
 CACHE = Path(__file__).resolve().parent / "gannon-bz-cache.csv"
 OUT = Path(__file__).resolve().parent / "gannon-bz-timeline.png"
 
-GANNON_START = dt.datetime(2024, 5, 8, tzinfo=dt.timezone.utc)
-GANNON_END = dt.datetime(2024, 5, 14, 23, 0, tzinfo=dt.timezone.utc)
+GANNON_START = dt.datetime(2024, 5, 8, tzinfo=dt.UTC)
+GANNON_END = dt.datetime(2024, 5, 14, 23, 0, tzinfo=dt.UTC)
 
 
 def _load_cache() -> tuple[list[dt.datetime], list[float]]:
@@ -87,7 +87,7 @@ def _refresh_from_dscovr() -> None:
             if ts is None or bz is None:
                 continue
             if isinstance(ts, (int, float)):
-                ts = dt.datetime.fromtimestamp(ts, tz=dt.timezone.utc)
+                ts = dt.datetime.fromtimestamp(ts, tz=dt.UTC)
             elif isinstance(ts, str):
                 ts = dt.datetime.fromisoformat(ts.replace("Z", "+00:00"))
             rows.append((ts, float(bz)))
@@ -108,7 +108,7 @@ def _refresh_from_dscovr() -> None:
 
     with CACHE.open("w", encoding="utf-8") as fh:
         fh.write("# DSCOVR L2 Bz cache — Gannon week (2024-05-08/14)\n")
-        fh.write(f"# Refreshed via DscovrAdapter.fetch_mag at {dt.datetime.now(dt.timezone.utc).isoformat()}\n")
+        fh.write(f"# Refreshed via DscovrAdapter.fetch_mag at {dt.datetime.now(dt.UTC).isoformat()}\n")
         fh.write("# Source: see helios-spaceweather-connectors v0.2.1 dscovr adapter.\n")
         fh.write("timestamp,Bz_nT_GSE\n")
         for k in sorted(buckets):

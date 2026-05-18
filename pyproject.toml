@@ -91,7 +91,8 @@ ignore = ["E501"]  # line length handled by formatter
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*" = ["ARG", "B", "SIM"]
-"notebooks/**/*" = ["ARG", "B", "F", "E"]
+"notebooks/**/*" = ["ARG", "B", "F", "E", "RUF001"]
+"paper/figures/**/*" = ["RUF001"]
 
 [tool.mypy]
 python_version = "3.11"
