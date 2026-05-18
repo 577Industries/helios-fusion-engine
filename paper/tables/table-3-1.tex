@@ -1,0 +1,33 @@
+% Table 3-1: pre-registered SEP validation events for the NASA mission-operations slice.
+% This file is included via \input{tables/table-3-1.tex} from main.tex.
+% Source: companion.md §3.1 Table 3-1; OSF pre-registration.
+\begin{table}[!htbp]
+  \centering
+  \small
+  \caption{Pre-registered SEP validation events for the NASA mission-operations
+    slice. Seven events form the training set; three later events form the
+    hold-out used for the kill-gate evaluation in §\ref{sec:results}.
+    The split was locked in the OSF pre-registration \cite{osf_prereg} before
+    any hold-out evaluation. \emph{Notes} column flags solar-cycle phase and
+    flare class to surface the distributional coverage. All hold-out events
+    post-date ISWA's January 2017 cutover, so they receive native real-data
+    Scoreboard streams (cf.\ §\ref{sec:data:iswa}).}
+  \label{tab:table-3-1}
+  \begin{tabular}{@{}l l l l@{}}
+    \toprule
+    Event & Date & Use & Notes \\
+    \midrule
+    Bastille Day              & 2000 Jul 14                  & Train      & Major X5.7 flare; well-characterized SEP profile \\
+    Halloween storms          & 2003 Oct 28 -- Nov 4         & Train      & Cycle 23 peak; multiple X-class events \\
+    Mid-cycle 23              & 2005 Jan 20                  & Train      & X7.1; fast onset; ground-level enhancement \\
+    Late cycle 23             & 2006 Dec 13                  & Train      & X3.4; tests low-solar-activity calibration \\
+    Cycle 24 onset            & 2012 Mar 7                   & Train      & X5.4; tests cross-cycle generalization \\
+    Cycle 24 mid              & 2012 May 17                  & Train      & M5.1; tests sub-X event sensitivity \\
+    Sep 2017 storm            & 2017 Sep 6 / Sep 10          & Train      & X9.3 + back-side X8.2; dual-event sequence \\
+    \addlinespace
+    Cycle 25 onset            & 2022 Jan 20                  & \textbf{Hold-out} & M5.5; tests cycle-25 distribution shift \\
+    Mid-cycle 25              & 2023 Feb 17                  & \textbf{Hold-out} & X2.2; mid-cycle hold-out anchor \\
+    Gannon (G5)               & 2024 May 11                  & \textbf{Hold-out} & Largest storm in $>$20 yr; dual-use anchor event \\
+    \bottomrule
+  \end{tabular}
+\end{table}

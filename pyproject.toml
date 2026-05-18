@@ -51,6 +51,11 @@ dev = [
     "pre-commit>=3.7",
     "detect-secrets>=1.5",
     "matplotlib>=3.8",
+    # v2 training tests import these directly. Until trusted publishing
+    # lands them on PyPI, install via git so CI can exercise the v2 paths
+    # (DEFAULT_COMPONENT_MODELS expansion, real HeliosModelOutputRecord).
+    "helios-provenance-spec @ git+https://github.com/577Industries/helios-provenance-spec.git@v0.1.0",
+    "helios-spaceweather-connectors @ git+https://github.com/577Industries/helios-spaceweather-connectors.git@v0.2.1",
 ]
 docs = [
     "mkdocs>=1.6",
@@ -66,6 +71,12 @@ Documentation = "https://577industries.github.io/helios-fusion-engine"
 
 [tool.hatch.version]
 path = "src/helios_fusion/__init__.py"
+
+[tool.hatch.metadata]
+# Required to allow git+https direct references in optional-dependencies
+# (helios-provenance-spec and helios-spaceweather-connectors are not yet on PyPI;
+# trusted publishing pending per OPERATOR_TODO Step 3).
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/helios_fusion"]
@@ -91,7 +102,8 @@ ignore = ["E501"]  # line length handled by formatter
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*" = ["ARG", "B", "SIM"]
-"notebooks/**/*" = ["ARG", "B", "F", "E"]
+"notebooks/**/*" = ["ARG", "B", "F", "E", "RUF001"]
+"paper/figures/**/*" = ["RUF001"]
 
 [tool.mypy]
 python_version = "3.11"
