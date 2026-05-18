@@ -108,14 +108,14 @@ def _refresh_from_dscovr() -> None:
 
     with CACHE.open("w", encoding="utf-8") as fh:
         fh.write("# DSCOVR L2 Bz cache — Gannon week (2024-05-08/14)\n")
-        fh.write(f"# Refreshed via DscovrAdapter.fetch_mag at {dt.datetime.now(dt.UTC).isoformat()}\n")
+        fh.write(
+            f"# Refreshed via DscovrAdapter.fetch_mag at {dt.datetime.now(dt.UTC).isoformat()}\n"
+        )
         fh.write("# Source: see helios-spaceweather-connectors v0.2.1 dscovr adapter.\n")
         fh.write("timestamp,Bz_nT_GSE\n")
         for k in sorted(buckets):
             mean_bz = sum(buckets[k]) / len(buckets[k])
-            fh.write(
-                f"{k.isoformat().replace('+00:00', 'Z')},{mean_bz:.3f}\n"
-            )
+            fh.write(f"{k.isoformat().replace('+00:00', 'Z')},{mean_bz:.3f}\n")
     print(f"refreshed {CACHE} with {len(buckets)} hourly samples")
 
 
@@ -186,8 +186,7 @@ def _render(ts: list[dt.datetime], bz: list[float]) -> None:
     )
 
     ax.annotate(
-        f"peak $B_z = {peak_bz:.2f}$ nT\n"
-        f"{peak_ts.strftime('%Y-%m-%d %H:%M UTC')}",
+        f"peak $B_z = {peak_bz:.2f}$ nT\n{peak_ts.strftime('%Y-%m-%d %H:%M UTC')}",
         xy=(peak_ts, peak_bz),
         xytext=(20, 25),
         textcoords="offset points",

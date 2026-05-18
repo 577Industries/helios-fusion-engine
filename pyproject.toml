@@ -51,6 +51,11 @@ dev = [
     "pre-commit>=3.7",
     "detect-secrets>=1.5",
     "matplotlib>=3.8",
+    # v2 training tests import these directly. Until trusted publishing
+    # lands them on PyPI, install via git so CI can exercise the v2 paths
+    # (DEFAULT_COMPONENT_MODELS expansion, real HeliosModelOutputRecord).
+    "helios-provenance-spec @ git+https://github.com/577Industries/helios-provenance-spec.git@v0.1.0",
+    "helios-spaceweather-connectors @ git+https://github.com/577Industries/helios-spaceweather-connectors.git@v0.2.1",
 ]
 docs = [
     "mkdocs>=1.6",

@@ -51,8 +51,7 @@ def _placeholder(name: str, label: str, sub: str) -> None:
     ax.text(
         0.5,
         0.28,
-        "Filled at preprint-completion time from "
-        "``helios-program/results/<date>-killgate-*.png``.",
+        "Filled at preprint-completion time from ``helios-program/results/<date>-killgate-*.png``.",
         ha="center",
         va="center",
         fontsize=8.5,

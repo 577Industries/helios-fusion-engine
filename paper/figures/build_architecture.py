@@ -104,13 +104,44 @@ def main() -> None:
     p_program = box(3.6, 3.8, 2.8, 1.0, "helios-program", "plan + companion", "v0.2.0", color=grey)
 
     # Row 1 (middle): the technical chain A -> B -> C plus the private weights F.
-    p_spec = box(0.2, 2.0, 2.2, 1.4, "helios-provenance-spec", "JSON Schema + pydantic v2", "v0.1.0", color=teal)
-    p_conn = box(2.7, 2.0, 2.4, 1.4, "helios-spaceweather-connectors", "6 federal adapters", "v0.2.1", color=blue)
-    p_fuse = box(5.4, 2.0, 2.4, 1.4, "helios-fusion-engine", "BMA + isotonic + conformal", "v0.1.2", color=blue)
-    p_priv = box(8.1, 2.0, 1.7, 1.4, "helios-fusion-internal", "trained weights", "private", color="#7f1d1d")
+    p_spec = box(
+        0.2,
+        2.0,
+        2.2,
+        1.4,
+        "helios-provenance-spec",
+        "JSON Schema + pydantic v2",
+        "v0.1.0",
+        color=teal,
+    )
+    p_conn = box(
+        2.7,
+        2.0,
+        2.4,
+        1.4,
+        "helios-spaceweather-connectors",
+        "6 federal adapters",
+        "v0.2.1",
+        color=blue,
+    )
+    p_fuse = box(
+        5.4,
+        2.0,
+        2.4,
+        1.4,
+        "helios-fusion-engine",
+        "BMA + isotonic + conformal",
+        "v0.1.2",
+        color=blue,
+    )
+    p_priv = box(
+        8.1, 2.0, 1.7, 1.4, "helios-fusion-internal", "trained weights", "private", color="#7f1d1d"
+    )
 
     # Row 0 (bottom): a leaf consumer of B.
-    p_gan = box(2.7, 0.3, 2.4, 1.2, "gannon-storm-rtk-analysis", "retrospective", "v0.1.0", color=teal)
+    p_gan = box(
+        2.7, 0.3, 2.4, 1.2, "gannon-storm-rtk-analysis", "retrospective", "v0.1.0", color=teal
+    )
 
     # Hard dependency arrows.
     arrow(p_spec, p_conn)
