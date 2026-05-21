@@ -53,14 +53,15 @@ Specifically, the package provides:
 
 This repository is part of the **HELIOS** program — a NASA SBIR Phase I
 effort by 577 Industries Inc. supporting subtopic SPWX.1.S26A (Advanced
-Data-Driven Applications for Space Weather R2O2R). See proposal §2 Obj. 2 +
-§3.1 (pre-registered validation) + §4.2 innovation #1 of the proposal.
+Data-Driven Applications for Space Weather R2O2R). See proposal §B Obj. 2 +
+§B.5 (pre-registered validation) + §B.6 innovation #1 of the proposal.
 
-**v0.1.0 — public framework first release.** The framework is feature-
-complete for the kill-gate path; once `helios-spaceweather-connectors` v0.2
-ships and the OSF pre-registration is filed, training and hold-out
-evaluation proceed in the private companion repo using this framework as
-the load-bearing library.
+**v0.2.0 — BMA orchestration with isotonic / Platt / severity-stratified
+calibrators, split + Mondrian conformal regressors, and CCMC-compatible
+metrics (May 18, 2026).** The framework is feature-complete for the kill-
+gate path; HELIOS Phase I work delivers trained priors and hold-out
+evaluation in the private companion repo (`helios-fusion-internal`) using
+this framework as the load-bearing library.
 
 ## Quickstart
 
@@ -96,7 +97,7 @@ for an end-to-end runnable pipeline.
 
 ## Documentation
 
-- **Master plan**: see [`helios-program`](https://github.com/577Industries/helios-program) (private; internal team)
+- **Master plan**: see [`helios-program`](https://github.com/577Industries/helios-program) (public; reviewer entry point)
 - **Architecture**: [`docs/architecture.md`](docs/architecture.md) explains
   why BMA + isotonic + conformal compose as they do.
 - **Baselines**: [`docs/baselines.md`](docs/baselines.md) defines the
