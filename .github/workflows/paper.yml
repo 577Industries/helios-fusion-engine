@@ -70,7 +70,7 @@ jobs:
           latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
 
       - name: Upload PDF artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: helios-fusion-engine-preprint
           path: paper/main.pdf
@@ -78,7 +78,7 @@ jobs:
           retention-days: 90
 
       - name: Upload aux artifacts for arXiv submission
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: helios-fusion-engine-preprint-aux
           path: |
