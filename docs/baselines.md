@@ -30,8 +30,8 @@ The comparator function is:
 from helios_fusion.eval import best_individual_component_baseline
 
 best_id, hss_point, (ci_lo, ci_hi) = best_individual_component_baseline(
-    component_outputs=...,        # all per-event per-model outputs
-    observed_binary=...,          # binary truth per event
+    component_outputs=...,  # all per-event per-model outputs
+    observed_binary=...,  # binary truth per event
     binary_threshold=0.5,
     n_bootstrap=1000,
 )
