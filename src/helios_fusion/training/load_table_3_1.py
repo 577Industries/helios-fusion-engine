@@ -56,6 +56,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import logging
 import os
 from dataclasses import dataclass, field
@@ -75,6 +76,19 @@ logger = logging.getLogger(__name__)
 
 #: Reproducibility seed for synthetic-proxy fallbacks. Locked.
 _SYNTH_SEED: int = 20260517
+
+
+def _stable_key(text: str) -> int:
+    """Return a process-stable 32-bit key derived from ``text``.
+
+    Python salts :func:`hash` for ``str`` per process (PYTHONHASHSEED), so
+    deriving a seed or an archetype index from ``hash(some_id)`` silently
+    produces different values on every run — which defeats ``_SYNTH_SEED``
+    above and makes the synthetic proxies irreproducible. SHA-256 is stable
+    across processes, interpreters and machines.
+    """
+    return int.from_bytes(hashlib.sha256(text.encode("utf-8")).digest()[:4], "big")
+
 
 #: Event-window half-width (days), per spec.
 EVENT_WINDOW_HALF_WIDTH_DAYS: int = 5
@@ -322,7 +336,7 @@ def load_table_3_1(
         ``data_gaps`` map naming any upstream sources we deferred.
     """
     models = tuple(component_models) if component_models is not None else DEFAULT_COMPONENT_MODELS
-    seed = rng_seed if rng_seed is not None else (_SYNTH_SEED ^ (hash(event.event_id) & 0xFFFFFFFF))
+    seed = rng_seed if rng_seed is not None else (_SYNTH_SEED ^ _stable_key(event.event_id))
     rng = np.random.default_rng(seed)
 
     data_gaps: dict[str, str] = {}
@@ -791,7 +805,7 @@ def _synthesize_proxy_stream(
     bias archetypes (well-calibrated, under-confident, over-confident).
     """
     p_true = 1.0 / (1.0 + np.exp(-0.9 * (kp_series - 4.5)))
-    bias_key = (hash(model_id) & 0xFF) % 3
+    bias_key = (_stable_key(model_id) & 0xFF) % 3
     noise = rng.normal(0.0, 0.03, p_true.shape)
     if bias_key == 0:  # well-calibrated
         out = p_true + noise
